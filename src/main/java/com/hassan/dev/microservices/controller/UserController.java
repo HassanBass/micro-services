@@ -4,6 +4,8 @@ import com.hassan.dev.microservices.dao.UserDaoService;
 import com.hassan.dev.microservices.entity.User;
 import com.hassan.dev.microservices.exception.UserNotFoundException;
 import jakarta.validation.Valid;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -27,12 +29,22 @@ public class UserController {
         return this.userDaoService.getAllUsers();
     }
 
+    //localhost:8081/users
+    //return entity model
+    //WebMVCLinkBuilder
     @GetMapping("/{id}")
-    public Optional<User> getUser(@PathVariable int id){
-        Optional<User> user = this.userDaoService.getUser(id);
-        if(user.isEmpty())
+    public EntityModel<User> getUser(@PathVariable int id){
+        Optional<User> userOptional = this.userDaoService.getUser(id);
+        if(userOptional.isEmpty())
             throw new UserNotFoundException("User with Id: "+id+" does not exist");
-        return this.userDaoService.getUser(id);
+        User userObject = userOptional.get();
+        EntityModel entityModel = EntityModel.of(userObject);
+        WebMvcLinkBuilder webMvcLinkBuilder = WebMvcLinkBuilder.
+                linkTo(WebMvcLinkBuilder.
+                        methodOn(this.getClass())
+                        .getAllUsers());
+       entityModel.add(webMvcLinkBuilder.withRel("all-users"));
+        return entityModel;
     }
 
     @PostMapping
